@@ -51,7 +51,7 @@ export function AppSidebar() {
             </div>
             {!collapsed && (
               <div>
-                <h2 className="text-lg font-bold text-foreground">AdStudio</h2>
+                <h2 className="text-lg font-bold text-purple-700">AdStudio</h2>
                 <p className="text-xs text-muted-foreground">Video Manager</p>
               </div>
             )}

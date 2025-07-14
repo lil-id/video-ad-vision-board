@@ -45,23 +45,47 @@ const Create = () => {
     }
   };
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file && file.type.startsWith('video/')) {
+    if (file && file.name.endsWith('.mp4')) {
       setUploadedVideo(file);
-      const videoUrl = URL.createObjectURL(file);
-      setUploadedVideoUrl(videoUrl);
-      if (!videoTitle) {
-        setVideoTitle(file.name.replace(/\.[^/.]+$/, ""));
+      const formData = new FormData();
+      formData.append("video", file);
+  
+      try {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/upload`, {
+          method: "POST",
+          body: formData,
+        });
+  
+        if (response.ok) {
+          const data = await response.json();
+          setUploadedVideoUrl(`${import.meta.env.VITE_API_URL}/videos/${data.filePath.split('/').pop()}`);
+          if (!videoTitle) {
+            setVideoTitle(file.name.replace(/\.[^/.]+$/, ""));
+          }
+          toast({
+            title: "Video Uploaded",
+            description: "Video has been successfully uploaded and saved.",
+          });
+        } else {
+          toast({
+            title: "Upload Failed",
+            description: "Failed to upload the video. Please try again.",
+            variant: "destructive",
+          });
+        }
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "An error occurred while uploading the video.",
+          variant: "destructive",
+        });
       }
-      toast({
-        title: "Video Uploaded",
-        description: "Local video has been successfully uploaded for editing.",
-      });
     } else {
       toast({
         title: "Invalid File",
-        description: "Please select a valid video file.",
+        description: "Please select a valid .mp4 video file.",
         variant: "destructive",
       });
     }
@@ -70,13 +94,13 @@ const Create = () => {
   const sendMqttMessage = async (videoUrl: string) => {
     try {
       const client = mqtt.connect('wss://broker.emqx.io:8084/mqtt', {
-        username: 'xxx',
-        password: 'xxx',
+        username: 'psd',
+        password: 'psd',
       });
 
       client.on('connect', () => {
         const payload = {
-          "api-key": "xxxx",
+          "api-key": "236r126r361236123467124365",
           "command": "ads1",
           "url": videoUrl
         };
@@ -122,8 +146,9 @@ const Create = () => {
       if (extractedVideoId) {
         videoUrl = `https://www.youtube.com/watch?v=${extractedVideoId}`;
       } else if (uploadedVideoUrl) {
+        console.log("Using uploaded video URL:", uploadedVideoUrl);
         // For local files, use the Firebase URL format as example
-        videoUrl = "https://firebasestorage.googleapis.com/v0/b/psd-display.appspot.com/o/1.mp4?alt=media&token=809ed76e-bfa7-4ea3-a047-dc7ab1f85115";
+        videoUrl = uploadedVideoUrl;
       }
 
       // Send MQTT message
@@ -230,7 +255,7 @@ const Create = () => {
                           className="mt-1"
                         />
                         <p className="text-xs text-muted-foreground mt-1">
-                          Supports MP4, WebM, AVI, MOV and other video formats
+                          Only Supports MP4 video format
                         </p>
                       </div>
                       

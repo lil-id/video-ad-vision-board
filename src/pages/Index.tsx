@@ -1,4 +1,5 @@
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { Link } from "react-router-dom";
 import { AppSidebar } from "@/components/AppSidebar";
 import { VideoPreview } from "@/components/VideoPreview";
 import { VideoStats } from "@/components/VideoStats";
@@ -14,6 +15,8 @@ const Index = () => {
     { id: "ScMzIvxBSi4", title: "Holiday Special", status: "Scheduled", views: "15.1K" },
   ];
 
+  const backendVideoUrl = "http://localhost:5000/videos/2025-07-14%20at%2005-video1033214747.mp4"
+
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-background">
@@ -28,10 +31,12 @@ const Index = () => {
                 <h1 className="text-2xl font-bold text-foreground">Video Dashboard</h1>
                 <p className="text-sm text-muted-foreground">Manage and optimize your video ads</p>
               </div>
-              <Button className="bg-gradient-to-r from-primary to-primary-glow hover:opacity-90">
-                <Upload className="w-4 h-4 mr-2" />
-                Upload Video
-              </Button>
+              <Link to="/create">
+                <Button className="bg-gradient-to-r from-primary to-primary-glow hover:opacity-90">
+                  <Upload className="w-4 h-4 mr-2" />
+                  Upload Video
+                </Button>
+              </Link>
             </div>
           </header>
 
@@ -40,8 +45,9 @@ const Index = () => {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Video Preview - Takes up 2 columns on large screens */}
               <div className="lg:col-span-2">
-                <VideoPreview 
-                  videoId="dQw4w9WgXqQ"
+                <VideoPreview
+                  videoId="" 
+                  videoUrl={backendVideoUrl}
                   title="Product Demo 2024 - Never Gonna Give You Up"
                 />
               </div>
