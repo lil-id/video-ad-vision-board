@@ -7,12 +7,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { VideoPreview } from "@/components/VideoPreview";
 import { useToast } from "@/hooks/use-toast";
-import { Youtube, Plus, Save } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Youtube, Plus, Save, Upload } from "lucide-react";
 
 const Create = () => {
   const [youtubeUrl, setYoutubeUrl] = useState("");
   const [videoTitle, setVideoTitle] = useState("");
   const [extractedVideoId, setExtractedVideoId] = useState("");
+  const [uploadedVideo, setUploadedVideo] = useState<File | null>(null);
+  const [uploadedVideoUrl, setUploadedVideoUrl] = useState("");
   const { toast } = useToast();
 
   const extractVideoId = (url: string) => {
@@ -41,8 +44,30 @@ const Create = () => {
     }
   };
 
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file && file.type.startsWith('video/')) {
+      setUploadedVideo(file);
+      const videoUrl = URL.createObjectURL(file);
+      setUploadedVideoUrl(videoUrl);
+      if (!videoTitle) {
+        setVideoTitle(file.name.replace(/\.[^/.]+$/, ""));
+      }
+      toast({
+        title: "Video Uploaded",
+        description: "Local video has been successfully uploaded for editing.",
+      });
+    } else {
+      toast({
+        title: "Invalid File",
+        description: "Please select a valid video file.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleSave = () => {
-    if (extractedVideoId && videoTitle) {
+    if ((extractedVideoId || uploadedVideo) && videoTitle) {
       toast({
         title: "Video Saved",
         description: "Your video ad has been saved to your campaign.",
@@ -51,7 +76,17 @@ const Create = () => {
       setYoutubeUrl("");
       setVideoTitle("");
       setExtractedVideoId("");
+      setUploadedVideo(null);
+      setUploadedVideoUrl("");
     }
+  };
+
+  const resetForm = () => {
+    setYoutubeUrl("");
+    setVideoTitle("");
+    setExtractedVideoId("");
+    setUploadedVideo(null);
+    setUploadedVideoUrl("");
   };
 
   return (
@@ -72,56 +107,119 @@ const Create = () => {
 
           <div className="p-6 space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* YouTube Import Form */}
+              {/* Video Import Options */}
               <Card className="p-6 bg-card border-border">
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2 mb-4">
-                    <Youtube className="w-5 h-5 text-red-500" />
-                    <h2 className="text-lg font-semibold text-foreground">Import from YouTube</h2>
-                  </div>
-                  
-                  <div className="space-y-4">
-                    <div>
-                      <Label htmlFor="youtube-url">YouTube URL</Label>
-                      <Input
-                        id="youtube-url"
-                        placeholder="https://www.youtube.com/watch?v=..."
-                        value={youtubeUrl}
-                        onChange={(e) => setYoutubeUrl(e.target.value)}
-                        className="mt-1"
-                      />
-                    </div>
-                    
-                    <div>
-                      <Label htmlFor="video-title">Video Title</Label>
-                      <Input
-                        id="video-title"
-                        placeholder="Enter video title for your ad"
-                        value={videoTitle}
-                        onChange={(e) => setVideoTitle(e.target.value)}
-                        className="mt-1"
-                      />
-                    </div>
+                <Tabs defaultValue="youtube" className="space-y-4">
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="youtube" className="flex items-center gap-2">
+                      <Youtube className="w-4 h-4" />
+                      YouTube
+                    </TabsTrigger>
+                    <TabsTrigger value="upload" className="flex items-center gap-2">
+                      <Upload className="w-4 h-4" />
+                      Upload
+                    </TabsTrigger>
+                  </TabsList>
 
-                    <Button 
-                      onClick={handleUrlSubmit}
-                      className="w-full bg-gradient-to-r from-primary to-primary-glow hover:opacity-90"
-                      disabled={!youtubeUrl}
-                    >
-                      <Plus className="w-4 h-4 mr-2" />
-                      Import Video
-                    </Button>
-                  </div>
-                </div>
+                  <TabsContent value="youtube" className="space-y-4">
+                    <div className="space-y-4">
+                      <div>
+                        <Label htmlFor="youtube-url">YouTube URL</Label>
+                        <Input
+                          id="youtube-url"
+                          placeholder="https://www.youtube.com/watch?v=..."
+                          value={youtubeUrl}
+                          onChange={(e) => setYoutubeUrl(e.target.value)}
+                          className="mt-1"
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="video-title">Video Title</Label>
+                        <Input
+                          id="video-title"
+                          placeholder="Enter video title for your ad"
+                          value={videoTitle}
+                          onChange={(e) => setVideoTitle(e.target.value)}
+                          className="mt-1"
+                        />
+                      </div>
+
+                      <Button 
+                        onClick={handleUrlSubmit}
+                        className="w-full bg-gradient-to-r from-primary to-primary-glow hover:opacity-90"
+                        disabled={!youtubeUrl}
+                      >
+                        <Plus className="w-4 h-4 mr-2" />
+                        Import Video
+                      </Button>
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="upload" className="space-y-4">
+                    <div className="space-y-4">
+                      <div>
+                        <Label htmlFor="video-file">Upload Video File</Label>
+                        <Input
+                          id="video-file"
+                          type="file"
+                          accept="video/*"
+                          onChange={handleFileUpload}
+                          className="mt-1"
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Supports MP4, WebM, AVI, MOV and other video formats
+                        </p>
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="local-video-title">Video Title</Label>
+                        <Input
+                          id="local-video-title"
+                          placeholder="Enter video title for your ad"
+                          value={videoTitle}
+                          onChange={(e) => setVideoTitle(e.target.value)}
+                          className="mt-1"
+                        />
+                      </div>
+
+                      {uploadedVideo && (
+                        <div className="p-3 bg-muted rounded-md">
+                          <p className="text-sm font-medium text-foreground">
+                            {uploadedVideo.name}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {(uploadedVideo.size / (1024 * 1024)).toFixed(1)} MB
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </TabsContent>
+                </Tabs>
               </Card>
 
               {/* Video Preview */}
-              {extractedVideoId && (
+              {(extractedVideoId || uploadedVideoUrl) && (
                 <div className="space-y-4">
-                  <VideoPreview 
-                    videoId={extractedVideoId}
-                    title={videoTitle}
-                  />
+                  {extractedVideoId ? (
+                    <VideoPreview 
+                      videoId={extractedVideoId}
+                      title={videoTitle}
+                    />
+                  ) : (
+                    <Card className="p-4 bg-card border-border">
+                      <div className="space-y-4">
+                        <h3 className="text-lg font-semibold text-foreground">{videoTitle || "Uploaded Video"}</h3>
+                        <video
+                          src={uploadedVideoUrl}
+                          controls
+                          className="w-full h-64 bg-black rounded-md"
+                        >
+                          Your browser does not support the video tag.
+                        </video>
+                      </div>
+                    </Card>
+                  )}
                   
                   <Button 
                     onClick={handleSave}
