@@ -9,6 +9,7 @@ import { VideoPreview } from "@/components/VideoPreview";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Youtube, Plus, Save, Upload } from "lucide-react";
+import mqtt from "mqtt";
 
 const Create = () => {
   const [youtubeUrl, setYoutubeUrl] = useState("");
@@ -66,12 +67,73 @@ const Create = () => {
     }
   };
 
+  const sendMqttMessage = async (videoUrl: string) => {
+    try {
+      const client = mqtt.connect('wss://broker.emqx.io:8084/mqtt', {
+        username: 'xxx',
+        password: 'xxx',
+      });
+
+      client.on('connect', () => {
+        const payload = {
+          "api-key": "xxxx",
+          "command": "ads1",
+          "url": videoUrl
+        };
+
+        client.publish('TEST/MKS-UNM-01', JSON.stringify(payload), (err) => {
+          if (err) {
+            toast({
+              title: "MQTT Error",
+              description: "Failed to send video data to MQTT broker.",
+              variant: "destructive",
+            });
+          } else {
+            toast({
+              title: "Data Sent",
+              description: "Video data successfully sent to MQTT broker.",
+            });
+          }
+          client.end();
+        });
+      });
+
+      client.on('error', (error) => {
+        toast({
+          title: "MQTT Connection Error",
+          description: "Failed to connect to MQTT broker.",
+          variant: "destructive",
+        });
+        client.end();
+      });
+    } catch (error) {
+      toast({
+        title: "MQTT Error",
+        description: "An error occurred while sending data to MQTT broker.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleSave = () => {
     if ((extractedVideoId || uploadedVideo) && videoTitle) {
+      // Determine video URL
+      let videoUrl = "";
+      if (extractedVideoId) {
+        videoUrl = `https://www.youtube.com/watch?v=${extractedVideoId}`;
+      } else if (uploadedVideoUrl) {
+        // For local files, use the Firebase URL format as example
+        videoUrl = "https://firebasestorage.googleapis.com/v0/b/psd-display.appspot.com/o/1.mp4?alt=media&token=809ed76e-bfa7-4ea3-a047-dc7ab1f85115";
+      }
+
+      // Send MQTT message
+      sendMqttMessage(videoUrl);
+
       toast({
         title: "Video Saved",
         description: "Your video ad has been saved to your campaign.",
       });
+      
       // Reset form
       setYoutubeUrl("");
       setVideoTitle("");
